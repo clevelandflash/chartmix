@@ -4,6 +4,7 @@ import urllib
 import simplejson as json
 import feedparser
 import re
+from pprint import pprint
 
 def buildSearchList(entries):
     searchList = []
@@ -14,7 +15,6 @@ def buildSearchList(entries):
         title = stripIndex(title)
         title = stripAsterisks(title)
         print 'Changing ' + originalTitle + '\n\tto ' + title
-        title = urllib.quote_plus(title)
         searchList.append(title)
     return searchList
 
@@ -32,19 +32,24 @@ def stripAsterisks(val):
     return re.sub(r'[^ ]*\*+[^ ]*', '', val)
 
 def buildPlaylist(searchList):
+    notFound = []
     print("javascript: window.Grooveshark.addSongsByID([")
     delim=''
     for item in searchList:
-        req = urllib2.Request("http://tinysong.com/s/" + item + "?format=json&key=" + os.environ['TINYSONG_KEY'], None)
+        itemToSearch = urllib.quote_plus(item)
+        req = urllib2.Request("http://tinysong.com/s/" + itemToSearch + "?format=json&key=" + os.environ['TINYSONG_KEY'], None)
         opener = urllib2.build_opener()
         f = opener.open(req)
         x = json.load(f)
         if len(x) == 0:
+            notFound.append(item)
             continue
         else:
             print(delim + str(x[0]['SongID']))
         delim=','
     print("])")
+    print "Could not find the following songs:"
+    pprint(notFound)
 
 
 source = feedparser.parse("http://www1.billboard.com/rss/charts/hot-100")
